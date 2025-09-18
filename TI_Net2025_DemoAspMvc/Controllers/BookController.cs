@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TI_Net2025_DemoAspMvc.Mappers;
 using TI_Net2025_DemoAspMvc.Models.Dtos.Author;
 using TI_Net2025_DemoAspMvc.Models.Dtos.Book;
@@ -43,6 +44,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
             return View(book.ToBookDetailDto());
         }
 
+        [Authorize(Roles = "Admin")]
         public IActionResult Add()
         {
             List<Author> authors = _authorRepository.GetAll();
@@ -56,6 +58,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
             return View(new BookFormDto());
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult Add([FromForm] BookFormDto book)
         {
@@ -73,7 +76,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 return View(book);
             }
 
-            if (_bookRepository.ExistByIsbn(book.Isbn))
+            if (_bookRepository.ExistById(book.Isbn))
             {
                 throw new Exception($"Book with isbn {book.Isbn} already exist");
             }
@@ -83,15 +86,16 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 throw new Exception($"Author with id {book.AuthorId} doesn't exist");
             }
 
-            _bookRepository.Insert(book.ToBook());
+            _bookRepository.Add(book.ToBook());
 
             return RedirectToAction("Index", "Book");
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("/book/edit/{isbn}")]
         public IActionResult Edit([FromRoute] string isbn)
         {
-            Book? book = _bookRepository.GetOne(isbn);
+            Book? book = _bookRepository.GetById(isbn);
 
             if (book == null)
             {
@@ -109,6 +113,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
             return View(book.ToBookFormDto());
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("/book/edit/{isbn}")]
         public IActionResult Edit([FromRoute] string isbn, [FromForm] BookFormDto book)
         {
@@ -125,7 +130,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 return View(book);
             }
 
-            if (!_bookRepository.ExistByIsbn(isbn))
+            if (!_bookRepository.ExistById(isbn))
             {
                 throw new Exception($"Book with isbn {isbn} doesn't exist");
             }
@@ -135,7 +140,7 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 throw new Exception($"Author with id {book.AuthorId} doesn't exist");
             }
 
-            if ( isbn != book.Isbn && _bookRepository.ExistByIsbn(book.Isbn))
+            if ( isbn != book.Isbn && _bookRepository.ExistById(book.Isbn))
             {
                 throw new Exception($"Book with isbn {book.Isbn} already exist");
             }
@@ -145,16 +150,17 @@ namespace TI_Net2025_DemoAspMvc.Controllers
             return RedirectToAction("Index", "Book");
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("/book/remove/{isbn}")]
         public IActionResult Remove([FromRoute] string isbn)
         {
 
-            if (!_bookRepository.ExistByIsbn(isbn))
+            if (!_bookRepository.ExistById(isbn))
             {
                 throw new Exception($"Book with isbn {isbn} doesn't exist");
             }
 
-            _bookRepository.Delete(isbn);
+            _bookRepository.DeleteById(isbn);
 
             return RedirectToAction("Index", "Book");
         }

@@ -3,9 +3,11 @@ using TI_Net2025_DemoAspMvc.Models.Entities;
 
 namespace TI_Net2025_DemoAspMvc.Repositories
 {
-    public class BookRepository
+    public class BookRepository: BaseRepository<Book,string>
     {
-        private readonly string _connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=BookDb;Trusted_Connection=True;";
+        protected override string TableName => "BOOK";
+
+        protected override string ColumnIdName => "ISBN";
 
         public List<Book> GetAllBooksWithAuthor()
         {
@@ -26,20 +28,7 @@ namespace TI_Net2025_DemoAspMvc.Repositories
 
                 while (reader.Read())
                 {
-                    books.Add(new Book
-                    {
-                        Isbn = (string)reader["ISBN"],
-                        Title = (string)reader["TITLE"],
-                        Description = reader["DESCRIPTION"] == DBNull.Value ? null : (string)reader["DESCRIPTION"],
-                        Release = (DateTime)reader["RELEASE"],
-                        AuthorId = (int)reader["AUTHOR_ID"],
-                        Author = new Author()
-                        {
-                            Id = (int)reader["AUTHOR_ID"],
-                            Firstname = (string)reader["FIRST_NAME"],
-                            Lastname = (string)reader["LAST_NAME"],
-                        },
-                    });
+                    books.Add(MapBookWithAuthor(reader));
                 }
 
                 connection.Close();
@@ -73,20 +62,7 @@ namespace TI_Net2025_DemoAspMvc.Repositories
                     return null;
                 }
 
-                book = new Book()
-                {
-                    Isbn = (string)reader["ISBN"],
-                    Title = (string)reader["TITLE"],
-                    Description = reader["DESCRIPTION"] == DBNull.Value ? null : (string)reader["DESCRIPTION"],
-                    Release = (DateTime)reader["RELEASE"],
-                    AuthorId = (int)reader["AUTHOR_ID"],
-                    Author = new Author()
-                    {
-                        Id = (int)reader["AUTHOR_ID"],
-                        Firstname = (string)reader["FIRST_NAME"],
-                        Lastname = (string)reader["LAST_NAME"],
-                    },
-                };
+                book = MapBookWithAuthor(reader);
 
                 connection.Close();
             }
@@ -94,69 +70,7 @@ namespace TI_Net2025_DemoAspMvc.Repositories
             return book;
         }
 
-        public Book? GetOne(string isbn)
-        {
-            Book book;
-
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                SqlCommand cmd = connection.CreateCommand();
-
-                cmd.CommandText = @$"SELECT * 
-                                    FROM BOOK B
-                                    WHERE ISBN = @isbn";
-
-                cmd.Parameters.AddWithValue("@isbn", isbn);
-
-                connection.Open();
-
-                SqlDataReader reader = cmd.ExecuteReader();
-
-                if (!reader.Read())
-                {
-                    return null;
-                }
-
-                book = new Book()
-                {
-                    Isbn = (string)reader["ISBN"],
-                    Title = (string)reader["TITLE"],
-                    Description = reader["DESCRIPTION"] == DBNull.Value ? null : (string)reader["DESCRIPTION"],
-                    Release = (DateTime)reader["RELEASE"],
-                    AuthorId = (int)reader["AUTHOR_ID"],
-                };
-
-                connection.Close();
-            }
-
-            return book;
-        }
-
-        public bool ExistByIsbn(string isbn)
-        {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                SqlCommand cmd = connection.CreateCommand();
-
-                cmd.CommandText = @"SELECT cast(CASE 
-                                        WHEN EXISTS (SELECT 1 FROM BOOK WHERE isbn = @isbn) 
-                                        THEN 1 
-                                        ELSE 0 
-                                    END as bit) AS isExisting;";
-
-                cmd.Parameters.AddWithValue("@isbn", isbn);
-
-                connection.Open();
-
-                bool exist = (bool)cmd.ExecuteScalar();
-
-                connection.Close();
-
-                return exist;
-            }
-        }
-
-        public void Insert(Book book)
+        public override void Add(Book book)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -179,7 +93,7 @@ namespace TI_Net2025_DemoAspMvc.Repositories
             }
         }
 
-        public void Update(string isbn, Book book)
+        public override void Update(string isbn, Book book)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -208,23 +122,33 @@ namespace TI_Net2025_DemoAspMvc.Repositories
             }
         }
 
-        public void Delete(string isbn)
+        public override Book MapEntity(SqlDataReader reader)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            return new Book()
             {
-                SqlCommand cmd = connection.CreateCommand();
+                Isbn = (string)reader["ISBN"],
+                Title = (string)reader["TITLE"],
+                Description = reader["DESCRIPTION"] == DBNull.Value ? null : (string)reader["DESCRIPTION"],
+                Release = (DateTime)reader["RELEASE"],
+                AuthorId = (int)reader["AUTHOR_ID"],
+            };
+        }
 
-                cmd.CommandText = @"DELETE FROM BOOK 
-                                    WHERE ISBN = @isbn ";
+        public Author MapAuthor(SqlDataReader reader)
+        {
+            return new Author()
+            {
+                Id = (int)reader["AUTHOR_ID"],
+                Firstname = (string)reader["FIRST_NAME"],
+                Lastname = (string)reader["LAST_NAME"],
+            };
+        }
 
-                cmd.Parameters.AddWithValue("@isbn", isbn);
-
-                connection.Open();
-
-                cmd.ExecuteNonQuery();
-
-                connection.Close();
-            }
+        public Book MapBookWithAuthor(SqlDataReader reader)
+        {
+            Book book = MapEntity(reader);
+            book.Author = MapAuthor(reader);
+            return book;
         }
     }
 }

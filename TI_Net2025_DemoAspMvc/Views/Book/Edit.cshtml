@@ -22,7 +22,7 @@
     </div>
     <div class="form-group">
         <label asp-for="AuthorId">@Html.DisplayNameFor(model => model.AuthorId)</label>
-        <select asp-for="AuthorId">
+        <select class="form-select" asp-for="AuthorId">
             @foreach (AuthorDto a in (List<AuthorDto>)ViewData["Authors"]!)
             {
                 <option value="@a.Id">@a.Lastname @a.Firstname</option>

@@ -4,11 +4,11 @@
 @model List<BookIndexDto>
 
 <h1>Liste de livre</h1>
-
-<a class="btn btn-primary"
-   asp-controller="Book"
-   asp-action="Add">Add book</a>
-
+@if(User.IsInRole("Admin")){
+    <a class="btn btn-primary"
+       asp-controller="Book"
+       asp-action="Add">Add book</a>
+}
 @if (Model.Count == 0)
 {
     <h2>Liste vide</h2>
@@ -36,17 +36,19 @@ else
                            asp-controller="Book"
                            asp-action="Details"
                            asp-route-isbn="@book.Isbn">Détails</a>
-                        <a class="btn btn-warning"
-                           asp-controller="Book"
-                           asp-action="Edit"
-                           asp-route-isbn="@book.Isbn">Modifier</a>
-                        <form class="d-inline"
-                              method="post"
-                              asp-controller="Book"
-                              asp-action="Remove"
-                              asp-route-isbn="@book.Isbn">
-                            <button type="submit" class="btn btn-danger">Supprimer</button>
-                        </form>
+                        @if(User.IsInRole("Admin")){
+                            <a class="btn btn-warning"
+                               asp-controller="Book"
+                               asp-action="Edit"
+                               asp-route-isbn="@book.Isbn">Modifier</a>
+                            <form class="d-inline"
+                                  method="post"
+                                  asp-controller="Book"
+                                  asp-action="Remove"
+                                  asp-route-isbn="@book.Isbn">
+                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                            </form>
+                        }
                     </td>
                 </tr>
             }
