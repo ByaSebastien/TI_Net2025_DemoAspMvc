@@ -7,14 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 #region Security
-//builder.Services.AddDistributedMemoryCache();
-
-//builder.Services.AddSession( options =>
-//{
-//    options.IdleTimeout = TimeSpan.FromMinutes(30);
-//    options.Cookie.IsEssential = true;
-//    options.Cookie.HttpOnly = true;
-//});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -24,6 +16,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Home/Index";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     });
+
 #endregion
 
 builder.Services.AddScoped<BookRepository>();
@@ -46,9 +39,9 @@ app.UseStaticFiles();
 app.UseRouting();
 
 #region UseSecurity
-//app.UseSession();
 
 app.UseAuthentication();
+
 #endregion
 
 app.UseAuthorization();
