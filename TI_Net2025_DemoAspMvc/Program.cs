@@ -7,14 +7,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 #region Security
-builder.Services.AddDistributedMemoryCache();
+//builder.Services.AddDistributedMemoryCache();
 
-builder.Services.AddSession( options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.IsEssential = true;
-    options.Cookie.HttpOnly = true;
-});
+//builder.Services.AddSession( options =>
+//{
+//    options.IdleTimeout = TimeSpan.FromMinutes(30);
+//    options.Cookie.IsEssential = true;
+//    options.Cookie.HttpOnly = true;
+//});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -46,7 +46,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 #region UseSecurity
-app.UseSession();
+//app.UseSession();
 
 app.UseAuthentication();
 #endregion
