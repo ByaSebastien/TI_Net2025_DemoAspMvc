@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using TI_Net2025_DemoAspMvc.Repositories;
+using TI_Net2025_DemoAspMvc.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,14 +16,34 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/User/Login";
         options.LogoutPath = "/User/Logout";
         options.AccessDeniedPath = "/Home/Index";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+        options.SlidingExpiration = false;
+
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = context =>
+            {
+                if (context.Properties.ExpiresUtc.HasValue &&
+                    context.Properties.ExpiresUtc.Value < DateTimeOffset.UtcNow)
+                {
+                    context.RejectPrincipal();
+                    context.HttpContext.SignOutAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme);
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
+
 
 #endregion
 
 builder.Services.AddScoped<BookRepository>();
 builder.Services.AddScoped<AuthorRepository>();
 builder.Services.AddScoped<UserRepository>();
+
+builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
 

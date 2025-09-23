@@ -11,15 +11,18 @@ using TI_Net2025_DemoAspMvc.Models;
 using TI_Net2025_DemoAspMvc.Models.Dtos.User;
 using TI_Net2025_DemoAspMvc.Models.Entities;
 using TI_Net2025_DemoAspMvc.Repositories;
+using TI_Net2025_DemoAspMvc.Services;
 
 namespace TI_Net2025_DemoAspMvc.Controllers
 {
     public class UserController : Controller
     {
         private readonly UserRepository _userRepository;
+        private readonly UserService _userService;
 
-        public UserController(UserRepository userRepository)
+        public UserController(UserRepository userRepository, UserService userService)
         {
+            _userService = userService;
             _userRepository = userRepository;
         }
 
@@ -37,16 +40,13 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 isValid = false;
             }
 
-            if(_userRepository.ExistByEmail(form.Email))
+            try
             {
-                ModelState.AddModelError<RegisterFormDto>(f => f.Email, "Email already exist");
-                isValid = false;
-            }
-
-            if(_userRepository.ExistByUsername(form.Username))
+                _userService.Add(form.ToUser());
+            }catch (Exception ex)
             {
-                ModelState.AddModelError<RegisterFormDto>(f => f.Username, "Username already exist");
                 isValid = false;
+                ModelState.AddModelError("email",ex.Message);
             }
 
             if (!isValid) { 
@@ -54,14 +54,6 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 form.Password = "";
                 return View(form);
             }
-
-            
-
-            User user = form.ToUser();
-            user.Password = Argon2.Hash(form.Password);
-            user.Role = UserRole.User;
-
-            _userRepository.Add(user);
 
             return RedirectToAction("Login","User");
         }
@@ -104,7 +96,14 @@ namespace TI_Net2025_DemoAspMvc.Controllers
                 CookieAuthenticationDefaults.AuthenticationScheme)
             );
 
-            HttpContext.SignInAsync(claims);
+            HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                claims,
+                new AuthenticationProperties
+                {
+                    IsPersistent = false,
+                    //ExpiresUtc = DateTime.UtcNow.AddMinutes(30)
+                });
 
             return RedirectToAction("Index", "Home");
         }
